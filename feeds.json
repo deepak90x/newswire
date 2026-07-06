@@ -1,0 +1,31 @@
+[
+  {
+    "name": "FlatpanelsHD News",
+    "url": "https://www.flatpanelshd.com/rss/news.xml"
+  },
+  {
+    "name": "FlatpanelsHD Reviews",
+    "url": "https://www.flatpanelshd.com/rss/reviews.xml"
+  },
+  { "name": "Tom's Hardware", "url": "https://www.tomshardware.com/feeds/all" },
+  { "name": "Tom's Guide", "url": "https://www.tomsguide.com/feeds/all" },
+  { "name": "What Hi-Fi", "url": "https://www.whathifi.com/feeds/all" },
+  { "name": "Engadget", "url": "https://www.engadget.com/rss.xml" },
+  { "name": "The Verge", "url": "https://www.theverge.com/rss/index.xml" },
+  {
+    "name": "Ars Technica",
+    "url": "https://feeds.arstechnica.com/arstechnica/index"
+  },
+  {
+    "name": "GSMArena",
+    "url": "https://www.gsmarena.com/rss-news-reviews.php3"
+  },
+  {
+    "name": "Android Authority",
+    "url": "https://www.androidauthority.com/feed"
+  },
+  { "name": "9to5Mac", "url": "https://9to5mac.com/feed" },
+  { "name": "9to5Google", "url": "https://9to5google.com/feed" },
+  { "name": "Cord Cutters News", "url": "https://cordcuttersnews.com/feed" },
+  { "name": "AFTVnews", "url": "https://aftvnews.com/feed" }
+]

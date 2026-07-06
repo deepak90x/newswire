@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Newswire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Archivo:wght@400;500&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #eff1ef; --card: #fafbfa; --ink: #191c1b; --muted: #666c6a;
+    --line: #d7dbd9; --accent: #2742c7; --accent-soft: #dfe4f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #151716; --card: #1d201f; --ink: #eceeed; --muted: #969c99;
+      --line: #2e3331; --accent: #8fa1f2; --accent-soft: #232a4d;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--paper); color: var(--ink); font: 16px/1.55 Archivo, sans-serif; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  header { display: flex; align-items: baseline; gap: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 14px; }
+  .wordmark { font: 500 15px/1 "Spline Sans Mono", monospace; letter-spacing: 0.22em; text-transform: uppercase; }
+  .date { font: 400 13px/1 "Spline Sans Mono", monospace; color: var(--muted); margin-left: auto; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 0 22px; }
+  .chip { font: 500 13px/1 "Spline Sans Mono", monospace; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .chip:focus-visible, .slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .minwrap { margin-left: auto; display: flex; align-items: center; gap: 8px; font: 400 13px/1 "Spline Sans Mono", monospace; color: var(--muted); }
+  input[type="range"] { accent-color: var(--accent); width: 110px; }
+
+  article { display: grid; grid-template-columns: 64px 1fr; gap: 18px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+  .scoreblock { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .num { font: 500 28px/1 "Spline Sans Mono", monospace; font-variant-numeric: tabular-nums; }
+  .meter { display: flex; gap: 2px; }
+  .meter i { width: 4px; height: 10px; background: var(--line); border-radius: 1px; }
+  .meter i.on { background: var(--accent); }
+
+  h2 { font: 500 22px/1.25 Newsreader, serif; }
+  h2 a { color: inherit; text-decoration: none; }
+  h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .meta { font: 400 12px/1 "Spline Sans Mono", monospace; color: var(--muted); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .tag { color: var(--accent); }
+  .dupes { background: var(--accent-soft); color: var(--accent); padding: 2px 7px; border-radius: 999px; }
+  .summary { margin-top: 8px; color: var(--muted); font-size: 15px; }
+
+  .empty { padding: 60px 0; text-align: center; color: var(--muted); font-size: 15px; }
+  @media (max-width: 520px) {
+    article { grid-template-columns: 48px 1fr; gap: 12px; }
+    .num { font-size: 22px; }
+    .minwrap { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    article { animation: rise 0.25s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="wordmark">Newswire</span>
+    <span class="date" id="date"></span>
+  </header>
+  <div class="controls" id="controls">
+    <div class="minwrap">
+      <label for="min">min score</label>
+      <input class="slider" type="range" id="min" min="0" max="10" step="1" value="5" />
+      <span id="minval">5</span>
+    </div>
+  </div>
+  <main id="list"><p class="empty">Loading…</p></main>
+</div>
+<script>
+  const state = { articles: [], topic: null, min: 5 };
+  const list = document.getElementById("list");
+  const controls = document.getElementById("controls");
+  const minInput = document.getElementById("min");
+  document.getElementById("date").textContent = new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+
+  function esc(s) { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+
+  function render() {
+    const rows = state.articles.filter(a => a.score >= state.min && (!state.topic || a.topic === state.topic));
+    if (!rows.length) {
+      list.innerHTML = '<p class="empty">Nothing above this score. Lower the filter, or run <code>npm run ingest</code> to fetch fresh stories.</p>';
+      return;
+    }
+    list.innerHTML = rows.map(a => `
+      <article>
+        <div class="scoreblock" aria-label="relevance ${a.score} out of 10">
+          <span class="num">${a.score}</span>
+          <span class="meter" aria-hidden="true">${Array.from({length:5},(_,i)=>`<i class="${a.score >= (i+1)*2 ? "on" : ""}"></i>`).join("")}</span>
+        </div>
+        <div>
+          <h2>${a.link ? `<a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.title)}</a>` : esc(a.title)}</h2>
+          <div class="meta">
+            <span>${esc(a.feed)}</span>
+            <span class="tag">#${esc(a.topic)}</span>
+            ${a.published ? `<span>${new Date(a.published).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span>` : ""}
+            ${a.dupes ? `<span class="dupes">+${a.dupes} more source${a.dupes>1?"s":""}</span>` : ""}
+          </div>
+          <p class="summary">${esc(a.summary)}</p>
+        </div>
+      </article>`).join("");
+  }
+
+  function buildChips() {
+    const topics = [...new Set(state.articles.map(a => a.topic))].sort();
+    document.querySelectorAll(".chip").forEach(c => c.remove());
+    const frag = document.createDocumentFragment();
+    const all = makeChip("all", null);
+    all.setAttribute("aria-pressed", "true");
+    frag.appendChild(all);
+    topics.forEach(t => frag.appendChild(makeChip("#" + t, t)));
+    controls.prepend(frag);
+  }
+
+  function makeChip(label, topic) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = label; b.setAttribute("aria-pressed", "false");
+    b.onclick = () => {
+      state.topic = topic;
+      document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+      render();
+    };
+    return b;
+  }
+
+  minInput.oninput = () => {
+    state.min = Number(minInput.value);
+    document.getElementById("minval").textContent = minInput.value;
+    render();
+  };
+
+  fetch("/api/articles").then(r => r.json()).then(data => {
+    state.articles = data;
+    buildChips();
+    render();
+  }).catch(() => { list.innerHTML = '<p class="empty">Could not reach the server API.</p>'; });
+</script>
+</body>
+</html>

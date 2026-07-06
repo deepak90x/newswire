@@ -1,0 +1,4 @@
+node_modules/
+newswire.db*
+ingest.log
+.DS_Store
