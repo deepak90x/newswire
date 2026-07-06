@@ -1,59 +1,76 @@
 # Newswire
 
-A local AI-curated news feed. RSS in → SQLite → your LM Studio model summarizes,
-scores against your interests, and tags each story → ranked dashboard at localhost.
-Nothing leaves your machine.
+A self-hosted, AI-curated news feed. RSS articles flow into SQLite, a local LLM
+(via [LM Studio](https://lmstudio.ai)) summarizes each story, scores it 0–10
+against your stated interests, and tags it by topic. A ranked dashboard shows
+the result. Everything runs on your machine — no cloud APIs, no accounts, no
+data leaving localhost.
 
-## Prerequisites
+## How it works
 
-- Node 24+ (you have 26.4.0 — good)
-- LM Studio with a model loaded and the local server running:
-  LM Studio → Developer tab → Start Server (default port 1234)
+```
+RSS feeds → SQLite → local LLM (summary + relevance score + topic) → dashboard
+```
+
+Duplicate stories across outlets are detected by title similarity and folded
+into a single entry with a "+N more sources" badge.
+
+## Requirements
+
+- Node.js 24+
+- LM Studio with any instruct model downloaded (12B-class works well;
+  4B-class is usually sufficient and much faster)
 
 ## Setup
 
-```
-cd newswire
+```bash
 npm install
 ```
 
-## Use
+In LM Studio: load your model, then Developer tab → toggle the server on
+(default: http://localhost:1234).
 
-```
+## Usage
+
+```bash
 npm run ingest   # fetch feeds, dedupe, summarize + score new articles
 npm start        # dashboard at http://localhost:4820
 ```
 
-Run `ingest` whenever you want fresh stories. First run processes everything
-currently in the feeds (~60 articles by default), so it takes a few minutes on
-a 12B model; later runs only touch new items.
+Re-run `ingest` whenever you want fresh stories. Already-seen articles are
+skipped; only new ones cost LLM time.
 
-## Configure
+## Configuration
 
-- `feeds.json` — add/remove sources. Any RSS/Atom URL works.
-- `config.json`
-  - `interests` — plain-English list the model scores against. Rewrite freely;
-    this is the whole personalization mechanism.
+- **`feeds.json`** — your sources. Any RSS/Atom URL works.
+- **`config.json`**
+  - `interests` — a plain-English list the model scores against. This is the
+    entire personalization mechanism; write it in your own words.
   - `lmstudio.model` — leave empty to auto-use whatever model is loaded.
   - `dedupe.titleSimilarityThreshold` — raise toward 0.7 if distinct stories
-    get merged, lower toward 0.4 if obvious repeats slip through.
+    get merged, lower toward 0.4 if repeats slip through.
   - `maxArticlesPerRun` — cap on LLM calls per ingest.
 
-## Automate (optional)
+## Automating (optional)
 
-To ingest every morning at 8, add a cron entry (`crontab -e`):
+Ingest every morning at 8 via cron (`crontab -e`):
 
 ```
 0 8 * * * cd /path/to/newswire && /opt/homebrew/bin/node src/ingest.js >> ingest.log 2>&1
 ```
 
-LM Studio must be open with the server running for the LLM step to work;
-fetching still succeeds without it and articles queue up as unprocessed.
+LM Studio must be running with the server on for scoring; feed fetching still
+succeeds without it, and articles queue as unprocessed until a model is
+available.
 
 ## Notes
 
-- Database is `newswire.db` in the project root. Delete it to start over.
-- Dashboard shows the last 7 days, ranked by score. Duplicates are folded into
-  the earliest version with a "+N more sources" badge.
-- Dedupe is title-similarity only (fast, free). If it's not good enough,
-  the upgrade path is embeddings via LM Studio's /v1/embeddings endpoint.
+- All data lives in `newswire.db`. Delete it to start over (e.g. to re-score
+  everything after rewriting your interests).
+- The dashboard shows the last 7 days, ranked by score.
+- Feeds that ship no article body (e.g. Hacker News) are scored from the
+  title alone, so their summaries are vaguer by nature.
+
+## License
+
+GPL-3.0 — see [LICENSE](LICENSE).
